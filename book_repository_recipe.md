@@ -1,5 +1,55 @@
 # BookStore Model and Repository Classes Design Recipe
 
+```
+         ┌────────────────┐  ┌─────────────────┐ ┌────────────────────────────┐   ┌────────────────────────────────┐ ┌────────────────────┐
+         │  Terminal      │  │  Main program   │ │ BookRepository class       │   │ DatabaseConnection class       │ │ Postgres database  │
+         │                │  │  (app.rb)       │ │ (in lib/book_repository.rb)│   │ (in lib/database_connection.rb)│ │                    │
+         │                │  │                 │ │                            │   │                                │ │                    │
+         └────────┬───────┘  └─────────┬───────┘ └─────────────┬──────────────┘   └──────────────────┬─────────────┘ └──────────┬─────────┘
+                  │                    │                       │                                     │                          │
+┌───────────┐     │                    │                       │                                     │                          │
+│  Flow     │     │    Runs            │                       │                                     │                          │
+│   of   │  │     │    `ruby app.rb`   │                       │                                     │                          │
+│  Time  │  │     ├───────────────────►│   Opens connection to database calling method `connect`     │                          │
+│        ▼  │     │                    │   on DatabaseConnection                                     │                          │
+└───────────┘     │                    ├───────────────────────┬────────────────────────────────────►│                          │
+                  │                    │                       │   Opens database connection using PG│and stores the connection │
+                  │                    │                       │                                     ├─────┐                    │
+                  │                    │ Calls method `all`    │                                     │     │                    │
+                  │                    │ on BookRepository     │                                     │     │                    │
+                  │                    ├──────────────────────►│                                     │◄────┘                    │
+                  │                    │                       │                                     │                          │
+                  │                    │                       │Sends SQL query by calling method    │                          │
+                  │                    │                       │`exec_params` on DatabaseConnection  │                          │
+                  │                    │                       ├────────────────────────────────────►│                          │
+                  │                    │                       │                                     │ Sends query to database  │
+                  │                    │                       │                                     │ via the open database    │
+                  │                    │                       │                                     │ connection               │
+                  │                    │                       │                                     ├──────────────────────────►
+                  │                    │                       │                                     │ Returns an array of      │
+                  │                    │                       │                                     │ hashes, one for each row │
+                  │                    │                       │                                     │ of the books table       │
+                  │                    │                       │  Returns an array of hashes,        │◄─────────────────────────┤
+                  │                    │                       │  one for each row of the books table│                          │
+                  │                    │                       │◄────────────────────────────────────┤                          │
+                  │                    │                       │                                     │                          │
+                  │                    │             ┌─────────┴─────────┐                           │                          │
+                  │                    │             │                   │Loops through array and    │                          │
+                  │                    │             │       loop        │creates an Book object     │                          │
+                  │                    │             │                   │for every row              │                          │
+                  │                    │             └─────────┬─────────┘                           │                          │
+                  │                    │ Returns array of      │                                     │                          │
+                  │ Prints list of     │ Book objects          │                                     │                          │
+                  │ books to terminal  │◄──────────────────────┤                                     │                          │
+                  │◄───────────────────┤                       │                                     │                          │
+                  │                    │                       │                                     │                          │
+         ┌────────┴───────┐  ┌─────────┴───────┐ ┌─────────────┴──────────────┐   ┌──────────────────┴─────────────┐ ┌──────────┴─────────┐
+         │  Terminal      │  │  Main program   │ │ BookRepository class       │   │ DatabaseConnection class       │ │ Postgres database  │
+         │                │  │  (app.rb)       │ │ (in lib/book_repository.rb)│   │ (in lib/database_connection.rb)│ │                    │
+         │                │  │                 │ │                            │   │                                │ │                    │
+         └────────────────┘  └─────────────────┘ └────────────────────────────┘   └────────────────────────────────┘ └────────────────────┘
+```
+
 _Copy this recipe template to design and implement Model and Repository classes for a database table._
 
 ## 1. Design and create the Table
@@ -140,7 +190,7 @@ This is so you get a fresh table contents every time you run the test suite.
 ```ruby
 # EXAMPLE
 
-# file: spec/student_repository_spec.rb
+# file: spec/book_repository_spec.rb
 
 def reset_books_table
   seed_sql = File.read('spec/seed_books.sql')
